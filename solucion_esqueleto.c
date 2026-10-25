@@ -98,22 +98,109 @@ char* strConcatenate(char* src1, char* src2) {
 
 // ========= EJERCICIO 2: FUNCIONES A IMPLEMENTAR (EL TP) =========
 
+void setRowToZero(RowNode* row){
+    for (int i = 0 ; i < GRID_COLS ; i++){
+        row -> cells[i] = 0;
+    }
+}
+
+void falloInitMalloc(GameBoard* board){
+    if (board -> first_row != NULL){
+        RowNode* row_actual = board -> first_row; // inicializo en el primer nodo
+
+        while (row_actual != NULL){ //libero el actual y avanzo al siguiente hasta que no haya nada
+            RowNode* siguiente = row_actual -> next;
+            free(row_actual);
+            row_actual = siguiente;
+        }
+    }
+    free(board);
+}
+
 GameBoard* gameBoardNew() {
-    // TODO: Reservar memoria para el GameBoard.
-    // TODO: Usar un bucle para hacer malloc de las 20 filas (RowNode) y conectarlas.
-    // TODO: El puntero first_row debe apuntar al primero de esos nodos.
-    // TODO: Inicializar queue_head, queue_tail y first_particle en NULL.
-    printf("Función gameBoardNew no implementada.\n");
-    return NULL;
+    // Reservar memoria para el GameBoard.
+
+    GameBoard *new_GameBoard = (GameBoard*) malloc(sizeof(GameBoard));
+    if (new_GameBoard == NULL){
+        return NULL; // error de malloc
+    }
+
+    // Usar un bucle para hacer malloc de las 20 filas (RowNode) y conectarlas.
+
+    RowNode* first_row = (RowNode*) malloc(sizeof(RowNode));
+    if (first_row == NULL) { //error de malloc, desalojar todo
+        falloInitMalloc(new_GameBoard);
+        return NULL;
+    }
+    setRowToZero(first_row);
+    RowNode* curr_row = first_row;
+    
+    for (int i = 0 ; i < GRID_ROWS-1 ; i++){
+        RowNode* new_row = (RowNode*) malloc(sizeof(RowNode));
+        if (new_row == NULL){ //error de malloc, desalojar todo
+            falloInitMalloc(new_GameBoard);
+            return NULL;
+        }
+        setRowToZero(new_row);
+        curr_row -> next = new_row; // enlazo nuevo nodo con el anterior
+        curr_row = curr_row -> next; // asigno el nodo actual al nuevo nodo creado
+    }
+
+    // El puntero first_row debe apuntar al primero de esos nodos.
+
+    new_GameBoard->first_row = first_row;
+
+    // Inicializar queue_head, queue_tail y first_particle en NULL
+    // Inicializar score y tick_timer en 0.
+
+    new_GameBoard->queue_head = NULL;
+    new_GameBoard->queue_tail = NULL;
+    new_GameBoard->first_particle = NULL;
+    new_GameBoard->tick_timer = 0;
+    new_GameBoard->score = 0;
+    // ?: QUE SIGNIFICA "SIN ACTIVE PIECE"?
+
+    return new_GameBoard;
 }
 
 void gameBoardDelete(GameBoard* board) {
-    // TODO: Debe tolerar board == NULL.
-    // TODO: Recorrer y liberar todos los RowNode con free().
-    // TODO: Recorrer y liberar todos los PieceQueueNode.
-    // TODO: Recorrer y liberar todos los ParticleNode.
-    // TODO: Finalmente, liberar la estructura GameBoard.
-    printf("Función gameBoardDelete no implementada.\n");
+    //  Debe tolerar board == NULL.
+
+    if (board == NULL) return; // no hay nada que hacer
+
+    // Recorrer y liberar todos los RowNode con free().
+
+    RowNode* row_actual = board -> first_row; // inicializo en el primer nodo
+
+    while (row_actual != NULL){ //libero el actual y avanzo al siguiente hasta que no haya nada
+        RowNode* siguiente = row_actual -> next;
+        free(row_actual);
+        row_actual = siguiente;
+    }
+
+    // Recorrer y liberar todos los PieceQueueNode. Mismo algoritmo que antes.
+
+    PieceQueueNode* piece_actual = board -> queue_head;
+
+    while (piece_actual != NULL){
+        PieceQueueNode* siguiente = piece_actual -> next;
+        free(piece_actual);
+        piece_actual = siguiente;
+    }
+
+    // Recorrer y liberar todos los ParticleNode.
+
+    ParticleNode* particle_actual = board -> first_particle;
+
+    while (particle_actual != NULL){
+        ParticleNode* siguiente = particle_actual -> next;
+        free(particle_actual);
+        particle_actual = siguiente;
+    }
+
+    // Finalmente, liberar la estructura GameBoard.
+
+    free(board);
 }
 
 void gameBoardAddParticle(GameBoard* board, float x, float y, int color) {
@@ -123,13 +210,53 @@ void gameBoardAddParticle(GameBoard* board, float x, float y, int color) {
     printf("Función gameBoardAddParticle no implementada.\n");
 }
 
+int isRowComplete(RowNode* row) {
+    for (int i = 0; i < GRID_COLS ; i++){ // Miro todas las columnas
+        if (row -> cells[i] == 0) return 0; // Cuando aparezca un 0 la fila no está completa
+    }
+    return 1; // Caso contrario, la fila está completa
+}
+
 int gameBoardCheckAndClearLines(GameBoard* board) {
-    // TODO: Recorrer la lista de RowNode.
-    // TODO: Si un RowNode tiene todas sus celdas > 0, desenlazarlo y hacer free().
-    // TODO: Crear un nuevo RowNode vacío (lleno de ceros).
-    // TODO: Insertar el nuevo RowNode en la CABEZA del tablero (board->first_row).
-    // TODO: Por cada celda destruida, invocar a gameBoardAddParticle().
-    printf("Función gameBoardCheckAndClearLines no implementada.\n");
+    // Recorrer la lista de RowNode.
+
+    RowNode* row_actual = board -> first_row;
+    RowNode* row_anterior = NULL;
+
+    while(row_actual != NULL){
+        if (isRowComplete(row_actual)){ // Si un RowNode tiene todas sus celdas > 0, desenlazarlo y hacer free().
+            if (row_anterior == NULL){ // Caso border donde la primera fila está completa
+                board -> first_row = row_actual -> next;
+                free(row_actual);
+                row_actual = board -> first_row; // el segundo elemento pasa a ser el primero
+            }
+            else{
+                row_anterior -> next = row_actual -> next; // conecto el anterior con el siguiente
+                free(row_actual);
+                row_actual = row_anterior -> next;
+            }
+            
+            // Crear un nuevo RowNode vacío (lleno de ceros).
+
+            RowNode* new_row = (RowNode*) malloc(sizeof(RowNode)); // ?: que hacer si falla malloc aca?
+            setRowToZero(new_row);
+            
+            // Insertar el nuevo RowNode en la CABEZA del tablero (board->first_row).
+
+            new_row -> next = board -> first_row;
+            board -> first_row = new_row;
+
+            // TODO: Por cada celda destruida, invocar a gameBoardAddParticle().
+
+            // ?: preguntar parametros
+            //gameBoardAddParticle(board, );
+            continue;
+        }
+        
+        row_anterior = row_actual;
+        row_actual = row_actual -> next;
+    }
+
     return 0;
 }
 

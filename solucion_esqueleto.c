@@ -98,56 +98,6 @@ char* strConcatenate(char* src1, char* src2) {
 
 // ========= EJERCICIO 2: FUNCIONES A IMPLEMENTAR (EL TP) =========
 
-void setRowToZero(RowNode* row){
-    for (int i = 0 ; i < GRID_COLS ; i++){
-        row -> cells[i] = 0;
-    }
-}
-
-GameBoard* gameBoardNew() {
-    // Reservar memoria para el GameBoard.
-
-    GameBoard *new_GameBoard = (GameBoard*) malloc(sizeof(GameBoard));
-    if (new_GameBoard == NULL){
-        return NULL; // error de malloc
-    }
-
-    // Usar un bucle para hacer malloc de las 20 filas (RowNode) y conectarlas.
-
-    new_GameBoard -> first_row = NULL; 
-    RowNode* last_row = NULL;
-    for (int i = 0 ; i < GRID_ROWS ; i++){
-        RowNode* new_row = (RowNode*) malloc(sizeof(RowNode));
-        if (new_row == NULL){ //error de malloc, desalojar todo
-            gameBoardDelete(new_GameBoard);
-            return NULL;
-        }
-        setRowToZero(new_row);
-
-        if (last_row == NULL){ // El puntero first_row debe apuntar al primero de esos nodos.
-            new_GameBoard -> first_row = new_row;
-        }
-        else{
-            last_row -> next = new_row; // enlazo el nueo nodo al anterior
-        }
-        last_row = new_row; // acutualizo last_row
-    }
-
-    last_row -> next = NULL; // el último apunta a null
-
-    // Inicializar queue_head, queue_tail y first_particle en NULL
-    // Inicializar score y tick_timer en 0.
-
-    new_GameBoard->queue_head = NULL;
-    new_GameBoard->queue_tail = NULL;
-    new_GameBoard->first_particle = NULL;
-    new_GameBoard->tick_timer = 0;
-    new_GameBoard->score = 0;
-    // ?: QUE SIGNIFICA "SIN ACTIVE PIECE"?
-
-    return new_GameBoard;
-}
-
 void gameBoardDelete(GameBoard* board) {
     //  Debe tolerar board == NULL.
 
@@ -188,6 +138,55 @@ void gameBoardDelete(GameBoard* board) {
     free(board);
 }
 
+void setRowToZero(RowNode* row){
+    for (int i = 0 ; i < GRID_COLS ; i++){
+        row -> cells[i] = 0;
+    }
+}
+
+GameBoard* gameBoardNew() {
+    // Reservar memoria para el GameBoard.
+
+    GameBoard *new_GameBoard = (GameBoard*) malloc(sizeof(GameBoard));
+    if (new_GameBoard == NULL){
+        return NULL; // error de malloc
+    }
+
+    // Inicializar queue_head, queue_tail y first_particle en NULL
+    // Inicializar score y tick_timer en 0.
+
+    new_GameBoard->queue_head = NULL;
+    new_GameBoard->queue_tail = NULL;
+    new_GameBoard->first_particle = NULL;
+    new_GameBoard->tick_timer = 0;
+    new_GameBoard->score = 0;
+    // ?: QUE SIGNIFICA "SIN ACTIVE PIECE"?
+
+    // Usar un bucle para hacer malloc de las 20 filas (RowNode) y conectarlas.
+
+    new_GameBoard -> first_row = NULL; 
+    RowNode* last_row = NULL;
+    for (int i = 0 ; i < GRID_ROWS ; i++){
+        RowNode* new_row = (RowNode*) malloc(sizeof(RowNode));
+        if (new_row == NULL){ //error de malloc, desalojar todo
+            gameBoardDelete(new_GameBoard);
+            return NULL;
+        }
+        setRowToZero(new_row);
+        new_row -> next = NULL;
+
+        if (last_row == NULL){ // El puntero first_row debe apuntar al primero de esos nodos.
+            new_GameBoard -> first_row = new_row;
+        }
+        else{
+            last_row -> next = new_row; // enlazo el nueo nodo al anterior
+        }
+        last_row = new_row; // acutualizo last_row
+    }
+
+    return new_GameBoard;
+}
+
 void gameBoardAddParticle(GameBoard* board, float x, float y, int color) {
     // TODO: Crear un ParticleNode con memoria dinámica.
     // TODO: Inicializar x, y, velocidades aleatorias y un life_timer.
@@ -218,12 +217,10 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
         if (isRowComplete(row_actual)){ // Si un RowNode tiene todas sus celdas > 0, desenlazarlo y hacer free().
             if (row_anterior == NULL){ // Caso border donde la primera fila está completa
                 board -> first_row = row_actual -> next;
-                free(row_actual);
                 row_actual = board -> first_row; // el segundo elemento pasa a ser el primero
             }
             else{
                 row_anterior -> next = row_actual -> next; // conecto el anterior con el siguiente
-                free(row_actual);
                 row_actual = row_anterior -> next;
             }
 
@@ -231,6 +228,10 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
 
             // ?: preguntar parametros
             //gameBoardAddParticle(board, );
+
+            // Libero row e incremento el contador
+            free(row_actual);
+            filasEliminadas++;
             continue;
         }
         

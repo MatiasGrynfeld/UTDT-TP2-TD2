@@ -104,19 +104,6 @@ void setRowToZero(RowNode* row){
     }
 }
 
-void falloInitMalloc(GameBoard* board){
-    if (board -> first_row != NULL){
-        RowNode* row_actual = board -> first_row; // inicializo en el primer nodo
-
-        while (row_actual != NULL){ //libero el actual y avanzo al siguiente hasta que no haya nada
-            RowNode* siguiente = row_actual -> next;
-            free(row_actual);
-            row_actual = siguiente;
-        }
-    }
-    free(board);
-}
-
 GameBoard* gameBoardNew() {
     // Reservar memoria para el GameBoard.
 
@@ -127,28 +114,26 @@ GameBoard* gameBoardNew() {
 
     // Usar un bucle para hacer malloc de las 20 filas (RowNode) y conectarlas.
 
-    RowNode* first_row = (RowNode*) malloc(sizeof(RowNode));
-    if (first_row == NULL) { //error de malloc, desalojar todo
-        falloInitMalloc(new_GameBoard);
-        return NULL;
-    }
-    setRowToZero(first_row);
-    RowNode* curr_row = first_row;
-    
-    for (int i = 0 ; i < GRID_ROWS-1 ; i++){
+    new_GameBoard -> first_row = NULL; 
+    RowNode* last_row = NULL;
+    for (int i = 0 ; i < GRID_ROWS ; i++){
         RowNode* new_row = (RowNode*) malloc(sizeof(RowNode));
         if (new_row == NULL){ //error de malloc, desalojar todo
-            falloInitMalloc(new_GameBoard);
+            gameBoardDelete(new_GameBoard);
             return NULL;
         }
         setRowToZero(new_row);
-        curr_row -> next = new_row; // enlazo nuevo nodo con el anterior
-        curr_row = curr_row -> next; // asigno el nodo actual al nuevo nodo creado
+
+        if (last_row == NULL){ // El puntero first_row debe apuntar al primero de esos nodos.
+            new_GameBoard -> first_row = new_row;
+        }
+        else{
+            last_row -> next = new_row; // enlazo el nueo nodo al anterior
+        }
+        last_row = new_row; // acutualizo last_row
     }
 
-    // El puntero first_row debe apuntar al primero de esos nodos.
-
-    new_GameBoard->first_row = first_row;
+    last_row -> next = NULL; // el último apunta a null
 
     // Inicializar queue_head, queue_tail y first_particle en NULL
     // Inicializar score y tick_timer en 0.
@@ -218,10 +203,16 @@ int isRowComplete(RowNode* row) {
 }
 
 int gameBoardCheckAndClearLines(GameBoard* board) {
+    if (board == NULL){
+        return 0; // ?: que devolver en este caso? y en las otras funciones tambien
+    }
+
     // Recorrer la lista de RowNode.
 
     RowNode* row_actual = board -> first_row;
     RowNode* row_anterior = NULL;
+
+    int filasEliminadas = 0;
 
     while(row_actual != NULL){
         if (isRowComplete(row_actual)){ // Si un RowNode tiene todas sus celdas > 0, desenlazarlo y hacer free().
@@ -235,16 +226,6 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
                 free(row_actual);
                 row_actual = row_anterior -> next;
             }
-            
-            // Crear un nuevo RowNode vacío (lleno de ceros).
-
-            RowNode* new_row = (RowNode*) malloc(sizeof(RowNode)); // ?: que hacer si falla malloc aca?
-            setRowToZero(new_row);
-            
-            // Insertar el nuevo RowNode en la CABEZA del tablero (board->first_row).
-
-            new_row -> next = board -> first_row;
-            board -> first_row = new_row;
 
             // TODO: Por cada celda destruida, invocar a gameBoardAddParticle().
 
@@ -257,7 +238,19 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
         row_actual = row_actual -> next;
     }
 
-    return 0;
+    for (int i = 0 ; i < filasEliminadas ; i++){
+        // Crear un nuevo RowNode vacío (lleno de ceros).
+
+        RowNode* new_row = (RowNode*) malloc(sizeof(RowNode)); // ?: que hacer si falla malloc aca?
+        setRowToZero(new_row);
+        
+        // Insertar el nuevo RowNode en la CABEZA del tablero (board->first_row).
+
+        new_row -> next = board -> first_row;
+        board -> first_row = new_row;
+    }
+
+    return filasEliminadas;
 }
 
 void gameBoardEnqueuePiece(GameBoard* board, int type) {

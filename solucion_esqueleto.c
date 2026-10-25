@@ -230,7 +230,8 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
             //gameBoardAddParticle(board, );
 
             // Libero row e incremento el contador
-            free(row_actual);
+            RowNode* fila_a_borrar = row_actual;
+            free(fila_a_borrar);
             filasEliminadas++;
             continue;
         }

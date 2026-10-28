@@ -260,18 +260,44 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
     return filasEliminadas;
 }
 
+// Agregamos una pieza al final de la cola (FIFO).
 void gameBoardEnqueuePiece(GameBoard* board, int type) {
-    // TODO: Crear un PieceQueueNode con el 'type'.
-    // TODO: Insertarlo al final de la cola (queue_tail) y actualizar punteros.
-    printf("Función gameBoardEnqueuePiece no implementada.\n");
+    // Reservamos memoria para el nuevo nodo.
+    PieceQueueNode* new_piece_node = (PieceQueueNode*) malloc(sizeof(PieceQueueNode));
+    if (new_piece_node == NULL) { // Error de malloc, no hacemos nada.
+        return; 
+    }
+
+    new_piece_node->type = type;   // Inicializamos los valores del nodo.
+    new_piece_node->next = NULL; 
+
+    if (board->queue_head == NULL){ // Si la cola esta vacía
+        board->queue_head = new_piece_node; // El nuevo nodo será el primero y último (al ser el único).
+        board->queue_tail = new_piece_node;
+    }
+
+    else { // Si hay piezas en la cola
+        board->queue_tail->next = new_piece_node; // Enlazamos el nuevo nodo al último.
+        board->queue_tail = new_piece_node; // Actualizamos el último nodo.
+    }
 }
 
-int gameBoardDequeuePiece(GameBoard* board, int* out_type) {
-    // TODO: Si la cola está vacía, retornar 0.
-    // TODO: Extraer el primer nodo (queue_head).
-    // TODO: Guardar el type en la variable out_type, liberar el nodo y actualizar el head.
-    printf("Función gameBoardDequeuePiece no implementada.\n");
-    return 0;
+// Extraemos la primera pieza de la cola (FIFO).
+int gameBoardDequeuePiece(GameBoard* board, int* out_type) {  
+    // Si la cola esta vacía (previo a extraer)
+    if (board->queue_head == NULL){
+        return 0;
+    }
+    PieceQueueNode* first_piece_node = board->queue_head; // Guardamos el primer nodo para liberarlo más tarde.
+    *out_type = first_piece_node->type; // Guardamos el tipo de pieza extraído. 
+    board->queue_head = first_piece_node->next; // Actualizamos el primer nodo de la cola.
+
+    if (board->queue_head == NULL){ // Si la cola queda vacía después de extraer la pieza
+        board->queue_tail = NULL; // Actualizamos el último nodo de la cola a NULL.
+    }
+
+    free(first_piece_node); // Liberamos la memoria del nodo que extraímos.
+    return 1;
 }
 
 // ========= LOGICA DE DIBUJADO Y COLISIONES (NO MODIFICAR) =========

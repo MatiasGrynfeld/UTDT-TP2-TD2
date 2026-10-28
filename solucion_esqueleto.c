@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h> // Usado para la función de test
 
 // ========= CONSTANTES DEL JUEGO =========
 #define SCREEN_WIDTH 500
@@ -154,13 +155,14 @@ GameBoard* gameBoardNew() {
 
     // Inicializar queue_head, queue_tail y first_particle en NULL
     // Inicializar score y tick_timer en 0.
+    // Inicializar current_piece con una pieza inactiva.
 
     new_GameBoard->queue_head = NULL;
     new_GameBoard->queue_tail = NULL;
     new_GameBoard->first_particle = NULL;
     new_GameBoard->tick_timer = 0;
     new_GameBoard->score = 0;
-    // ?: QUE SIGNIFICA "SIN ACTIVE PIECE"?
+    new_GameBoard->current_piece = (ActivePiece){0,0,0,0,0}; // Pone todos los parametros de active piece en 0.
 
     // Usar un bucle para hacer malloc de las 20 filas (RowNode) y conectarlas.
 
@@ -202,9 +204,7 @@ int isRowComplete(RowNode* row) {
 }
 
 int gameBoardCheckAndClearLines(GameBoard* board) {
-    if (board == NULL){
-        return 0; // ?: que devolver en este caso? y en las otras funciones tambien
-    }
+    if (board == NULL) return 0;
 
     // Recorrer la lista de RowNode.
 
@@ -215,6 +215,7 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
 
     while(row_actual != NULL){
         if (isRowComplete(row_actual)){ // Si un RowNode tiene todas sus celdas > 0, desenlazarlo y hacer free().
+            RowNode* fila_a_borrar = row_actual;
             if (row_anterior == NULL){ // Caso border donde la primera fila está completa
                 board -> first_row = row_actual -> next;
                 row_actual = board -> first_row; // el segundo elemento pasa a ser el primero
@@ -230,7 +231,6 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
             //gameBoardAddParticle(board, );
 
             // Libero row e incremento el contador
-            RowNode* fila_a_borrar = row_actual;
             free(fila_a_borrar);
             filasEliminadas++;
             continue;
@@ -243,7 +243,12 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
     for (int i = 0 ; i < filasEliminadas ; i++){
         // Crear un nuevo RowNode vacío (lleno de ceros).
 
-        RowNode* new_row = (RowNode*) malloc(sizeof(RowNode)); // ?: que hacer si falla malloc aca?
+        RowNode* new_row = (RowNode*) malloc(sizeof(RowNode));
+        if (new_row == NULL){
+            printf("Error de memoria al reemplazar fila\n");
+            gameBoardDelete(board);
+            exit(EXIT_FAILURE); // Salgo por error en memoria
+        }
         setRowToZero(new_row);
         
         // Insertar el nuevo RowNode en la CABEZA del tablero (board->first_row).
@@ -433,19 +438,171 @@ int inicializar() {
 
 // ========= TESTS (COMPLETAR) =========
 
+int checkRowCount(GameBoard* board){
+    if (board == NULL || board -> first_row == NULL){
+        return 0;
+    }
+
+    RowNode* curr_row = board -> first_row;
+    int res = 1;
+
+    while (curr_row != NULL){
+        curr_row = curr_row -> next;
+        res++;
+    }
+    
+    return res;
+}
+
+void fillRow(GameBoard* board, int rowIndex){
+    if (board == NULL || board -> first_row == NULL){
+        return;
+    }
+
+    RowNode* curr_row = board -> first_row;
+    int i = 0;
+
+    while (curr_row != NULL){
+        if(i == rowIndex){
+            curr_row -> cells = {1,1,1,1,1,1,1,1,1,1};
+        }
+        curr_row = curr_row -> next;
+        i++;
+    }
+}
+
+int areStringsEqual(char* str1, char* str2){
+    while(str1 != '\0' && str2 != '\0'){
+        if(*str1 != *str2){
+            return 0;
+        }
+        str1++;
+        str2++;
+    }
+
+    if ((str1 == '\0' && str2 != '\0') || (str1 != '\0' && str2 == '\0')){
+        return 0;
+    }
+    else{
+        return 1;
+    }
+}
+
 void correrTests() {
-    // TODO: Implementar los casos minimos del enunciado. Por ejemplo:
     //  - strDuplicate: "", "x", un string con distintos caracteres.
+
+    char* str_duplicado1 = strDuplicate("");
+    char* str_duplicado2 = strDuplicate("x");
+    char* str_duplicado3 = strDuplicate("ae2@G)&\|~");
+
+    assert(areStringsEqual("", str_duplicado1) && "String duplicado no matchea");
+    assert(areStringsEqual("x", str_duplicado2) && "String duplicado no matchea");
+    assert(areStringsEqual("ae2@G)&\|~", str_duplicado3) && "String duplicado no matchea");
+
+    free(str_duplicado1);
+    free(str_duplicado2);
+    free(str_duplicado3);
+
     //  - strCompare: "" vs "", "a" vs "a", y una desigualdad en ambos sentidos (s1/s2 y s2/s1).
+
+    int resultado_compare = strCompare("", "");
+    assert(resultado_compare==0 && "Error strings vacíos");
+
+    resultado_compare = strCompare("a", "a");
+    assert(resultado_compare==0 && "Error strings iguales");
+
+    resultado_compare = strCompare("b", "a");
+    assert(resultado_compare==-1 && "Error string mayor");
+
+    resultado_compare = strCompare("a", "b");
+    assert(resultado_compare==1 && "Error string menos");
+
+    resultado_compare = strCompare("perro", "perros");
+    assert(resultado_compare==1 && "Error string prefijo");
+
     //  - strConcatenate: "" + "abc" y "hola " + "mundo". Los argumentos deben crearse con
     //    strDuplicate, porque strConcatenate los libera (no pasar literales).
+
+    char* str_vacio = strDuplicate("");
+    char* str_abc = strDuplicate("abc");
+    char* str_hola = strDuplicate("hola ");
+    char* str_mundo = strDuplicate("mundo");
+
+    char* str_concatenado1 = strConcatenate(str_vacio, str_abc);
+    char* str_concatenado2 = strConcatenate(str_hola, str_mundo);
+
+    assert(areStringsEqual(str_concatenado1, "abc") && "Error al concatenar con string vacío");
+    assert(areStringsEqual(str_concatenado2, "hola mundo") && "Error al concatenar 2 strings");
+
+    free(str_concatenado1);
+    free(str_concatenado2);
+
     //  - Cola: 5 push y 6 pop; el 6to debe devolver 0 y dejar queue_head y queue_tail en NULL.
+
+    GameBoard* board = gameBoardNew();
+    gameBoardEnqueuePiece(board, 0);
+    gameBoardEnqueuePiece(board, 1);
+    gameBoardEnqueuePiece(board, 2);
+    gameBoardEnqueuePiece(board, 3);
+    gameBoardEnqueuePiece(board, 4);
+
+    assert(board -> queue_head != NULL || board -> queue_tail != NULL && "Error en push a queue"); // Me fijo si se crearon nodos
+    PieceQueueNode* curr_element = board -> queue_head;
+
+    int order[5] = {0,1,2,3,4};
+    int index = 0;
+    while (curr_element != NULL){ // Recorro la secuencia de nodos para ver que siga el orden esperado
+        assert(curr_element -> type == order[index] && "Error orden FIFO en push");
+        curr_element = curr_element -> next;
+        index++;
+    }
+
+    int outputDequeue; // Dummy output, solo me interesa fijarme su valor en el último dequeue
+    gameBoardDequeuePiece(board, &outputDequeue);
+    gameBoardDequeuePiece(board, &outputDequeue);
+    gameBoardDequeuePiece(board, &outputDequeue);
+    gameBoardDequeuePiece(board, &outputDequeue);
+    gameBoardDequeuePiece(board, &outputDequeue);
+    gameBoardDequeuePiece(board, &outputDequeue);
+
+    assert(outputDequeue == 0 && "Pop con queue vacía no devuelve 0");
+    assert(board -> queue_head == NULL && "Queue vacía no tiene queue_head NULL");
+    assert(board -> queue_tail == NULL && "Queue vacía no tiene queue_tail NULL");
+
     //    Verificar tambien que un push posterior funcione.
+
+    gameBoardEnqueuePiece(board, 3);
+
+    assert(board -> queue_head != NULL && board -> queue_tail != NULL && board -> queue_head == board -> queue_tail && board -> queue_head -> type == 3 && "Push posterior no funciona");
+
     //  - Tablero: llenar la fila de indice 19 (la de abajo), llamar a
     //    gameBoardCheckAndClearLines y comprobar que first_row es la fila nueva vacia y que
     //    la lista sigue teniendo 20 filas.
+
+    fillRow(board, 19);
+
+    int cant_filas_eliminadas = gameBoardCheckAndClearLines(board);
+    assert(cant_filas_eliminadas == 1 && "Error al eliminar la última fila");
+
+    // ?: que significa "comprobar que first_row es la fila nueva vacia"?
+
+    int cant_filas = checkRowCount(board);
+    assert(cant_filas == 20 && "Error al reemplazar filas eliminadas");
+
+    // Llenar filas 0 y 1 y llamar gameBoardCheckAndClearLines.
+    
+    fillRow(board, 0);
+    fillRow(board, 1);
+
+    cant_filas_eliminadas = gameBoardCheckAndClearLines(board);
+    assert(cant_filas_eliminadas == 2 && "Error al eliminar las dos primeras filas");
+
+    cant_filas = checkRowCount(board);
+    assert(cant_filas == 20 && "Error al reemplazar filas eliminadas");
+
     // Liberar toda la memoria pedida en los tests (strings y tableros).
-    printf("Tests no implementados.\n");
+
+    free(board);
 }
 
 // Compara contra "--test" sin depender de string.h ni del Ejercicio 1.

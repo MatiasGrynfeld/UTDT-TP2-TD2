@@ -202,9 +202,9 @@ void gameBoardAddParticle(GameBoard* board, float x, float y, int color) {
     new_particle_node->color = color;
 
     // Velocidades aleatorias y tiempo de vida fijo.
-    new_particle_node->vel_x = (rand() % 7) - 3; // Valor entero entre -3 y 3: izquierda o derecha.
-    new_particle_node->vel_y = -((rand() % 4) + 3); // Valor entero entre -6 y -3: primero sube y luego cae por la gravedad.  
-    new_particle_node->life_timer = 40; // 40 actualizaciones antes de desaparecer.
+    new_particle_node->vel_x = ((rand() % 100) / 10.0f) - 5.0f; // Valores sacados de juego_base.c
+    new_particle_node->vel_y = ((rand() % 50) / -10.0f) - 2.0f;
+    new_particle_node->life_timer = 30 + (rand() % 30);
 
     // Agregamos el nuevo nodo al principio de la lista de partículas.
     new_particle_node->next = board->first_particle;
@@ -275,7 +275,6 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
     return filasEliminadas;
 }
 
-// Agregamos una pieza al final de la cola (FIFO).
 void gameBoardEnqueuePiece(GameBoard* board, int type) {
     // Reservamos memoria para el nuevo nodo.
     PieceQueueNode* new_piece_node = (PieceQueueNode*) malloc(sizeof(PieceQueueNode));
@@ -297,7 +296,6 @@ void gameBoardEnqueuePiece(GameBoard* board, int type) {
     }
 }
 
-// Extraemos la primera pieza de la cola (FIFO).
 int gameBoardDequeuePiece(GameBoard* board, int* out_type) {  
     // Si la cola está vacía, no extraemos nada.
     if (board->queue_head == NULL){
@@ -480,14 +478,14 @@ int inicializar() {
 // ========= TESTS (COMPLETAR) =========
 
 int checkRowCount(GameBoard* board){
-    if (board == NULL || board -> first_row == NULL){
+    if (board == NULL || board -> first_row == NULL){ // Caso sin tablero
         return 0;
     }
 
     RowNode* curr_row = board -> first_row;
-    int res = 1;
+    int res = 0;
 
-    while (curr_row != NULL){
+    while (curr_row != NULL){ // itero todas las filas hasta el final incrementando el contador
         curr_row = curr_row -> next;
         res++;
     }
@@ -503,9 +501,11 @@ void fillRow(GameBoard* board, int rowIndex){
     RowNode* curr_row = board -> first_row;
     int i = 0;
 
-    while (curr_row != NULL){
+    while (curr_row != NULL){ // Busca la fila a llenar
         if(i == rowIndex){
-            curr_row -> cells = {1,1,1,1,1,1,1,1,1,1};
+            for (int j = 0 ; j < GRID_COLS ; j++){ // LLena todas las celdas con valores >0
+                curr_row -> cells[j] = 1;
+            }
         }
         curr_row = curr_row -> next;
         i++;
@@ -513,20 +513,27 @@ void fillRow(GameBoard* board, int rowIndex){
 }
 
 int areStringsEqual(char* str1, char* str2){
-    while(str1 != '\0' && str2 != '\0'){
-        if(*str1 != *str2){
+    while(*str1 != '\0' && *str2 != '\0'){ // Avanza en los srings a la vez hasta que uno se completa
+        if(*str1 != *str2){ // Comprueba igualdad de caracteres
             return 0;
         }
         str1++;
         str2++;
     }
 
-    if ((str1 == '\0' && str2 != '\0') || (str1 != '\0' && str2 == '\0')){
+    if ((*str1 == '\0' && *str2 != '\0') || (*str1 != '\0' && *str2 == '\0')){ // Si hay uno que no termino son distintos
         return 0;
     }
-    else{
+    else{ // Si ambos terminaron son iguales
         return 1;
     }
+}
+
+int isRowEmpty(RowNode* row){
+    for (int i = 0; i < GRID_COLS ; i++){ // Miro todas las columnas
+        if (row -> cells[i] != 0) return 0; // Cuando aparezca algo != 0 la fila no está completa
+    }
+    return 1; // Caso contrario, la fila está vacía
 }
 
 void correrTests() {
@@ -534,11 +541,11 @@ void correrTests() {
 
     char* str_duplicado1 = strDuplicate("");
     char* str_duplicado2 = strDuplicate("x");
-    char* str_duplicado3 = strDuplicate("ae2@G)&\|~");
+    char* str_duplicado3 = strDuplicate("ae2@G)&~!]+");
 
     assert(areStringsEqual("", str_duplicado1) && "String duplicado no matchea");
     assert(areStringsEqual("x", str_duplicado2) && "String duplicado no matchea");
-    assert(areStringsEqual("ae2@G)&\|~", str_duplicado3) && "String duplicado no matchea");
+    assert(areStringsEqual("ae2@G)&~!]+", str_duplicado3) && "String duplicado no matchea");
 
     free(str_duplicado1);
     free(str_duplicado2);
@@ -581,13 +588,12 @@ void correrTests() {
     //  - Cola: 5 push y 6 pop; el 6to debe devolver 0 y dejar queue_head y queue_tail en NULL.
 
     GameBoard* board = gameBoardNew();
-    gameBoardEnqueuePiece(board, 0);
-    gameBoardEnqueuePiece(board, 1);
-    gameBoardEnqueuePiece(board, 2);
-    gameBoardEnqueuePiece(board, 3);
-    gameBoardEnqueuePiece(board, 4);
 
-    assert(board -> queue_head != NULL || board -> queue_tail != NULL && "Error en push a queue"); // Me fijo si se crearon nodos
+    for (int i = 0; i < 5 ; i++){
+        gameBoardEnqueuePiece(board, i);
+    }
+
+    assert((board -> queue_head != NULL && board -> queue_tail != NULL) && "Error en push a queue"); // Me fijo si se crearon nodos
     PieceQueueNode* curr_element = board -> queue_head;
 
     int order[5] = {0,1,2,3,4};
@@ -598,15 +604,17 @@ void correrTests() {
         index++;
     }
 
-    int outputDequeue; // Dummy output, solo me interesa fijarme su valor en el último dequeue
-    gameBoardDequeuePiece(board, &outputDequeue);
-    gameBoardDequeuePiece(board, &outputDequeue);
-    gameBoardDequeuePiece(board, &outputDequeue);
-    gameBoardDequeuePiece(board, &outputDequeue);
-    gameBoardDequeuePiece(board, &outputDequeue);
-    gameBoardDequeuePiece(board, &outputDequeue);
+    int outputDequeueType;
+    int outputDequeue;
+    for (int i = 0 ; i < 5 ; i++){ // Para cada pop, me fijo si elimina un elemento y que sea del tipo que corresponde según FIFO
+        outputDequeue = gameBoardDequeuePiece(board, &outputDequeueType);
+        assert(outputDequeue == 1 && "Pop debería devolver 1 con queue no vacía");
+        assert(outputDequeueType == i && "Error orden FIFO del pop");
+    }
 
-    assert(outputDequeue == 0 && "Pop con queue vacía no devuelve 0");
+    int popVacio = gameBoardDequeuePiece(board, &outputDequeueType);
+    assert(popVacio == 0 && "Pop con queue vacía no devuelve 0");
+    assert(outputDequeueType == 4 && "Pop con queue vacía no debería modificar el último tipo sacado"); // 4 fue el valor de la última pieza sacada
     assert(board -> queue_head == NULL && "Queue vacía no tiene queue_head NULL");
     assert(board -> queue_tail == NULL && "Queue vacía no tiene queue_tail NULL");
 
@@ -616,16 +624,20 @@ void correrTests() {
 
     assert(board -> queue_head != NULL && board -> queue_tail != NULL && board -> queue_head == board -> queue_tail && board -> queue_head -> type == 3 && "Push posterior no funciona");
 
+    int popPosterior = gameBoardDequeuePiece(board, &outputDequeueType);
+    assert(popPosterior == 1 && outputDequeueType == 3 && "Error al extraer en el push posterior");
+
     //  - Tablero: llenar la fila de indice 19 (la de abajo), llamar a
     //    gameBoardCheckAndClearLines y comprobar que first_row es la fila nueva vacia y que
     //    la lista sigue teniendo 20 filas.
 
+    RowNode* vieja_primera_fila = board -> first_row;
     fillRow(board, 19);
 
     int cant_filas_eliminadas = gameBoardCheckAndClearLines(board);
     assert(cant_filas_eliminadas == 1 && "Error al eliminar la última fila");
+    assert(board -> first_row != NULL && board -> first_row != vieja_primera_fila && isRowEmpty(board->first_row) && "first_row no es la nueva primera fila");
 
-    // ?: que significa "comprobar que first_row es la fila nueva vacia"?
 
     int cant_filas = checkRowCount(board);
     assert(cant_filas == 20 && "Error al reemplazar filas eliminadas");
@@ -643,7 +655,7 @@ void correrTests() {
 
     // Liberar toda la memoria pedida en los tests (strings y tableros).
 
-    free(board);
+    gameBoardDelete(board);
 }
 
 // Compara contra "--test" sin depender de string.h ni del Ejercicio 1.

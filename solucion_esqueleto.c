@@ -227,7 +227,7 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
     RowNode* row_anterior = NULL;
 
     int filasEliminadas = 0;
-
+    int filaIndex = 0;
     while(row_actual != NULL){
         if (isRowComplete(row_actual)){ // Si un RowNode tiene todas sus celdas > 0, desenlazarlo y hacer free().
             RowNode* fila_a_borrar = row_actual;
@@ -240,19 +240,25 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
                 row_actual = row_anterior -> next;
             }
 
-            // TODO: Por cada celda destruida, invocar a gameBoardAddParticle().
+            // Por cada celda destruida, invocar a gameBoardAddParticle().
 
-            // ?: preguntar parametros
-            //gameBoardAddParticle(board, );
+            for (int i = 0 ; i < GRID_COLS ; i++){
+                int x = OFFSET_X + i * CELL_SIZE;
+                int y = OFFSET_Y + filaIndex * CELL_SIZE;
+                int color = fila_a_borrar -> cells[i];
+                gameBoardAddParticle(board, x, y, color);
+            }
 
             // Libero row e incremento el contador
             free(fila_a_borrar);
             filasEliminadas++;
+            filaIndex++;
             continue;
         }
         
         row_anterior = row_actual;
         row_actual = row_actual -> next;
+        filaIndex++;
     }
 
     for (int i = 0 ; i < filasEliminadas ; i++){

@@ -190,10 +190,25 @@ GameBoard* gameBoardNew() {
 }
 
 void gameBoardAddParticle(GameBoard* board, float x, float y, int color) {
-    // TODO: Crear un ParticleNode con memoria dinámica.
-    // TODO: Inicializar x, y, velocidades aleatorias y un life_timer.
-    // TODO: Agregarlo al principio de la lista enlazada simple de partículas.
-    printf("Función gameBoardAddParticle no implementada.\n");
+    // Reservamos memoria para el nuevo nodo.
+    ParticleNode* new_particle_node = (ParticleNode*) malloc(sizeof(ParticleNode));
+    if (new_particle_node == NULL) { // Error de malloc.
+        return;
+    }
+
+    // Inicializamos los valores del nodo.
+    new_particle_node->x = x;
+    new_particle_node->y = y;
+    new_particle_node->color = color;
+
+    // Velocidades aleatorias y tiempo de vida fijo.
+    new_particle_node->vel_x = (rand() % 7) - 3; // Valor entero entre -3 y 3: izquierda o derecha.
+    new_particle_node->vel_y = -((rand() % 4) + 3); // Valor entero entre -6 y -3: primero sube y luego cae por la gravedad.  
+    new_particle_node->life_timer = 40; // 40 actualizaciones antes de desaparecer.
+
+    // Agregamos el nuevo nodo al principio de la lista de partículas.
+    new_particle_node->next = board->first_particle;
+    board->first_particle = new_particle_node; 
 }
 
 int isRowComplete(RowNode* row) {
@@ -264,19 +279,19 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
 void gameBoardEnqueuePiece(GameBoard* board, int type) {
     // Reservamos memoria para el nuevo nodo.
     PieceQueueNode* new_piece_node = (PieceQueueNode*) malloc(sizeof(PieceQueueNode));
-    if (new_piece_node == NULL) { // Error de malloc, no hacemos nada.
+    if (new_piece_node == NULL) { // Error de malloc.
         return; 
     }
 
     new_piece_node->type = type;   // Inicializamos los valores del nodo.
     new_piece_node->next = NULL; 
 
-    if (board->queue_head == NULL){ // Si la cola esta vacía
-        board->queue_head = new_piece_node; // El nuevo nodo será el primero y último (al ser el único).
+    if (board->queue_head == NULL){ // Si la cola está vacía.
+        board->queue_head = new_piece_node; // El nuevo nodo será el primero y último.
         board->queue_tail = new_piece_node;
     }
 
-    else { // Si hay piezas en la cola
+    else { // Si hay piezas en la cola.
         board->queue_tail->next = new_piece_node; // Enlazamos el nuevo nodo al último.
         board->queue_tail = new_piece_node; // Actualizamos el último nodo.
     }
@@ -284,7 +299,7 @@ void gameBoardEnqueuePiece(GameBoard* board, int type) {
 
 // Extraemos la primera pieza de la cola (FIFO).
 int gameBoardDequeuePiece(GameBoard* board, int* out_type) {  
-    // Si la cola esta vacía (previo a extraer)
+    // Si la cola está vacía, no extraemos nada.
     if (board->queue_head == NULL){
         return 0;
     }

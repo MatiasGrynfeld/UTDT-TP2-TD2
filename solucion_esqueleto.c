@@ -82,19 +82,63 @@ GameBoard* game_board = NULL;
 char* strDuplicate(char* src) {
     // TODO: Contar los caracteres de src, reservar con malloc (no olvidar el '\0'),
     //       copiar todo y devolver el puntero nuevo.
-    return NULL;
+    if (src == NULL) return NULL;
+    int len = 0;
+    while (src[len] != '\0') {
+      len++;
+    }
+    char* dest = (char*) malloc(len + 1);
+    if (dest == NULL) return NULL;
+    for (int i = 0; i<= len; i++) {
+      dest[i] = src[i];
+    }
+    return dest;     
 }
 
 int strCompare(char* s1, char* s2) {
     // TODO: Devolver 0 si son iguales, 1 si s1 < s2, -1 si s1 > s2.
     //       Ojo: es la convencion INVERSA a strcmp.
-    return 0;
+    int i = 0;
+    while (s1[i] != '\0' && s2[i] != '\0') {
+        if (s1[i] < s2[i]) {
+            return 1;
+        } else if (s1[i] > s2[i]) {
+            return -1;
+        }
+        i++;
+    }
+    if (s1[i] == '\0' && s2[i] == '\0') {
+        return 0;      // Iguales
+    } else if (s1[i] == '\0') {
+        return 1;      // s1 es prefijo de s2 (s1 es menor)
+    } else {
+        return -1;     // s2 es prefijo de s1 (s1 es mayor)
+    }
 }
 
 char* strConcatenate(char* src1, char* src2) {
     // TODO: Reservar un string nuevo con src1 seguido de src2, y liberar src1 y src2.
     //       Precondicion: src1 y src2 vienen de malloc y son punteros distintos.
-    return NULL;
+    if (src1 == NULL || src2 == NULL) return NULL;
+    int len1 = 0;
+    while (src1[len1] != '\0') {
+        len1++;
+    }
+    int len2 = 0;
+    while (src2[len2] != '\0') {
+        len2++;
+    }
+    char* dest = (char*) malloc(len1 + len2 + 1);
+    if (dest == NULL) return NULL;
+    for (int i = 0; i < len1; i++) {
+        dest[i] = src1[i];
+    }
+    for (int j = 0; j <= len2; j++) {
+        dest[len1 + j] = src2[j];
+    }
+    free(src1);
+    free(src2);
+    return dest;
 }
 
 // ========= EJERCICIO 2: FUNCIONES A IMPLEMENTAR (EL TP) =========

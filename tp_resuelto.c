@@ -80,26 +80,31 @@ GameBoard* game_board = NULL;
 // ========= EJERCICIO 1: STRINGS (NO USAR string.h) =========
 
 char* strDuplicate(char* src) {
-    // TODO: Contar los caracteres de src, reservar con malloc (no olvidar el '\0'),
-    //       copiar todo y devolver el puntero nuevo.
+    // Contar los caracteres de src, reservar con malloc (no olvidar el '\0'),
+    // copiar todo y devolver el puntero nuevo.
     if (src == NULL) return NULL;
     int len = 0;
-    while (src[len] != '\0') {
-      len++;
+
+    while (src[len] != '\0') { // itero para contar los caracteres
+        len++;
     }
-    char* dest = (char*) malloc(len + 1);
+
+    char* dest = (char*) malloc(len + 1); // creo el duplicado
     if (dest == NULL) return NULL;
-    for (int i = 0; i<= len; i++) {
-      dest[i] = src[i];
+
+    for (int i = 0; i<= len; i++) { // pongo los caracteres del string original
+        dest[i] = src[i];
     }
+
     return dest;     
 }
 
 int strCompare(char* s1, char* s2) {
-    // TODO: Devolver 0 si son iguales, 1 si s1 < s2, -1 si s1 > s2.
-    //       Ojo: es la convencion INVERSA a strcmp.
+    // Devolver 0 si son iguales, 1 si s1 < s2, -1 si s1 > s2.
+    // Ojo: es la convencion INVERSA a strcmp.
     int i = 0;
-    while (s1[i] != '\0' && s2[i] != '\0') {
+
+    while (s1[i] != '\0' && s2[i] != '\0') { // comparo caracter a caracter
         if (s1[i] < s2[i]) {
             return 1;
         } else if (s1[i] > s2[i]) {
@@ -107,6 +112,7 @@ int strCompare(char* s1, char* s2) {
         }
         i++;
     }
+
     if (s1[i] == '\0' && s2[i] == '\0') {
         return 0;      // Iguales
     } else if (s1[i] == '\0') {
@@ -117,25 +123,32 @@ int strCompare(char* s1, char* s2) {
 }
 
 char* strConcatenate(char* src1, char* src2) {
-    // TODO: Reservar un string nuevo con src1 seguido de src2, y liberar src1 y src2.
-    //       Precondicion: src1 y src2 vienen de malloc y son punteros distintos.
+    // Reservar un string nuevo con src1 seguido de src2, y liberar src1 y src2.
+    // Precondicion: src1 y src2 vienen de malloc y son punteros distintos.
     if (src1 == NULL || src2 == NULL) return NULL;
+
     int len1 = 0;
-    while (src1[len1] != '\0') {
+    while (src1[len1] != '\0') { // cantidad de caracteres de src1
         len1++;
     }
+
     int len2 = 0;
-    while (src2[len2] != '\0') {
+    while (src2[len2] != '\0') { // cantidad de caracteres de src2
         len2++;
     }
-    char* dest = (char*) malloc(len1 + len2 + 1);
+
+    char* dest = (char*) malloc(len1 + len2 + 1); // creo el nuevo string
     if (dest == NULL) return NULL;
+
+    // pongo los caracteres de los strings originales
     for (int i = 0; i < len1; i++) {
         dest[i] = src1[i];
     }
     for (int j = 0; j <= len2; j++) {
         dest[len1 + j] = src2[j];
     }
+
+    // libero los strings originales
     free(src1);
     free(src2);
     return dest;

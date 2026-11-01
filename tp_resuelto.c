@@ -258,7 +258,7 @@ void gameBoardAddParticle(GameBoard* board, float x, float y, int color) {
     new_particle_node->y = y;
     new_particle_node->color = color;
 
-    // Velocidades aleatorias y tiempo de vida fijo.
+    // Velocidades y tiempo de vida aleatorios.
     new_particle_node->vel_x = ((rand() % 100) / 10.0f) - 5.0f; // Valores sacados de juego_base.c
     new_particle_node->vel_y = ((rand() % 50) / -10.0f) - 2.0f;
     new_particle_node->life_timer = 30 + (rand() % 30);

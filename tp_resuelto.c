@@ -300,8 +300,8 @@ int gameBoardCheckAndClearLines(GameBoard* board) {
             // Por cada celda destruida, invocar a gameBoardAddParticle().
 
             for (int i = 0 ; i < GRID_COLS ; i++){
-                int x = OFFSET_X + i * CELL_SIZE;
-                int y = OFFSET_Y + filaIndex * CELL_SIZE;
+                int x = OFFSET_X + i * CELL_SIZE + CELL_SIZE/2; // valores sacados de juego_base.c
+                int y = OFFSET_Y + filaIndex * CELL_SIZE + CELL_SIZE/2;
                 int color = fila_a_borrar -> cells[i];
                 gameBoardAddParticle(board, x, y, color);
             }
@@ -626,10 +626,13 @@ void correrTests() {
     assert(resultado_compare==-1 && "Error string mayor");
 
     resultado_compare = strCompare("a", "b");
-    assert(resultado_compare==1 && "Error string menos");
+    assert(resultado_compare==1 && "Error string menor");
 
     resultado_compare = strCompare("perro", "perros");
     assert(resultado_compare==1 && "Error string prefijo");
+
+    resultado_compare = strCompare("perros", "perro");
+    assert(resultado_compare == -1 && "Error string prefijo inverso");
 
     //  - strConcatenate: "" + "abc" y "hola " + "mundo". Los argumentos deben crearse con
     //    strDuplicate, porque strConcatenate los libera (no pasar literales).
@@ -642,11 +645,18 @@ void correrTests() {
     char* str_concatenado1 = strConcatenate(str_vacio, str_abc);
     char* str_concatenado2 = strConcatenate(str_hola, str_mundo);
 
-    assert(areStringsEqual(str_concatenado1, "abc") && "Error al concatenar con string vacío");
+    str_vacio = strDuplicate("");
+    str_abc = strDuplicate("abc");
+
+    char* str_concatenado3 = strConcatenate(str_abc, str_vacio);
+
+    assert(areStringsEqual(str_concatenado1, "abc") && "Error al concatenar con string vacío al principio");
     assert(areStringsEqual(str_concatenado2, "hola mundo") && "Error al concatenar 2 strings");
+    assert(areStringsEqual(str_concatenado3, "abc") && "Error al concatenar con string vacío al final");
 
     free(str_concatenado1);
     free(str_concatenado2);
+    free(str_concatenado3);
 
     //  - Cola: 5 push y 6 pop; el 6to debe devolver 0 y dejar queue_head y queue_tail en NULL.
 
